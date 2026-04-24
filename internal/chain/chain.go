@@ -67,5 +67,11 @@ func (m *Manager) Delete(project, name string) error {
 		return errors.New("chain name must not be empty")
 	}
 	key := chainKey(project, name)
-	return m.store.Delete(key)
+	if err := m.store.Delete(key); err != nil {
+		if errors.Is(err, store.ErrNotFound) {
+			return fmt.Errorf("%w: %s/%s", ErrChainNotFound, project, name)
+		}
+		return err
+	}
+	return nil
 }
