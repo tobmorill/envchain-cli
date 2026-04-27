@@ -87,6 +87,28 @@ func (m *Manager) List() (map[string]string, error) {
 	return out, nil
 }
 
+// Rename renames an existing alias from oldName to newName, preserving the
+// chain it points to. Returns ErrNotFound if oldName does not exist and
+// ErrInvalidName if newName is not a valid alias name.
+func (m *Manager) Rename(oldName, newName string) error {
+	if !validAlias.MatchString(newName) {
+		return fmt.Errorf("%w: %q", ErrInvalidName, newName)
+	}
+	af, err := m.load()
+	if err != nil {
+		return err
+	}
+	oldKey := strings.ToLower(oldName)
+	newKey := strings.ToLower(newName)
+	chainName, ok := af.Aliases[oldKey]
+	if !ok {
+		return fmt.Errorf("%w: %q", ErrNotFound, oldName)
+	}
+	delete(af.Aliases, oldKey)
+	af.Aliases[newKey] = chainName
+	return m.save(af)
+}
+
 func (m *Manager) load() (aliasFile, error) {
 	af := aliasFile{Aliases: make(map[string]string)}
 	data, err := os.ReadFile(m.path)
