@@ -89,3 +89,13 @@ func Decrypt(data []byte, passphrase string) ([]byte, error) {
 	}
 	return plaintext, nil
 }
+
+// ReEncrypt decrypts data with oldPassphrase and re-encrypts it with newPassphrase.
+// This is useful for passphrase rotation without exposing the plaintext to the caller.
+func ReEncrypt(data []byte, oldPassphrase, newPassphrase string) ([]byte, error) {
+	plaintext, err := Decrypt(data, oldPassphrase)
+	if err != nil {
+		return nil, err
+	}
+	return Encrypt(plaintext, newPassphrase)
+}
