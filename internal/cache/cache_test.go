@@ -62,3 +62,18 @@ func TestDefaultTTLUsedWhenZero(t *testing.T) {
 		t.Fatalf("expected %q, got %q", "pass", v)
 	}
 }
+
+// TestStoreOverwritesExistingEntry verifies that storing a new value for an
+// existing key replaces the previous value and resets the TTL.
+func TestStoreOverwritesExistingEntry(t *testing.T) {
+	m := cache.New(5 * time.Second)
+	m.Store("proj", "old-pass")
+	m.Store("proj", "new-pass")
+	v, err := m.Retrieve("proj")
+	if err != nil {
+		t.Fatalf("unexpected error after overwrite: %v", err)
+	}
+	if v != "new-pass" {
+		t.Fatalf("expected %q after overwrite, got %q", "new-pass", v)
+	}
+}
