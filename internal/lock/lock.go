@@ -27,6 +27,16 @@ func (s Session) IsExpired() bool {
 	return time.Now().After(s.ExpiresAt)
 }
 
+// TimeRemaining returns the duration until the session expires.
+// It returns 0 if the session is already expired.
+func (s Session) TimeRemaining() time.Duration {
+	rem := time.Until(s.ExpiresAt)
+	if rem < 0 {
+		return 0
+	}
+	return rem
+}
+
 // Manager handles lock/unlock sessions stored on disk.
 type Manager struct {
 	dir string
@@ -80,6 +90,20 @@ func (m *Manager) IsUnlocked(chain string) (bool, error) {
 		return false, nil
 	}
 	return true, nil
+}
+
+// GetSession returns the active session for chain, or an error if the chain
+// is locked or the session has expired.
+func (m *Manager) GetSession(chain string) (Session, error) {
+	s, err := m.load(chain)
+	if err != nil {
+		return Session{}, err
+	}
+	if s.IsExpired() {
+		_ = os.Remove(m.sessionPath(chain))
+		return Session{}, ErrLocked
+	}
+	return s, nil
 }
 
 func (m *Manager) load(chain string) (Session, error) {
